@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EatWise</string>
+    <string name="accessibility_description">EatWise reads on-screen text only to analyze food ingredients and provide health insights. No data is stored without your consent. Your privacy is protected.</string>
+</resources>
