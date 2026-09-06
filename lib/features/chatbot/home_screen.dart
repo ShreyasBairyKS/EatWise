@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'We only read text when you tap scan. No data is stored or shared.',
+                  'We only read text when you tap scan, and only send it for analysis when it looks like an ingredient list. Nothing is stored.',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.blue[800],

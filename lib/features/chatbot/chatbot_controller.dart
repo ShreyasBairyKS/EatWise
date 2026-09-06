@@ -46,8 +46,15 @@ class ChatbotController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Process raw ingredient text from accessibility service or user input
-  Future<void> processIngredients(String rawText) async {
+  /// Process raw ingredient text from accessibility service or user input.
+  ///
+  /// [isUserProvided] must be true only when the text was typed/pasted by the
+  /// user directly (e.g. in the chat input), never for text captured by the
+  /// accessibility scan. Scanned text can come from any foreground app, so it
+  /// is only ever sent onward (to the AI service) once it has been matched
+  /// against an ingredients anchor — arbitrary screen content must not leave
+  /// the device just because a scan happened to pick it up.
+  Future<void> processIngredients(String rawText, {bool isUserProvided = false}) async {
     // Avoid processing same text twice in quick succession
     if (rawText == _lastScannedText && rawText.length < 50) return;
     _lastScannedText = rawText;
@@ -57,8 +64,10 @@ class ChatbotController extends ChangeNotifier {
       return; // Too short to be meaningful
     }
     
-    print('Processing text of length: ${rawText.length}');
-    print('First 200 chars: ${rawText.substring(0, rawText.length.clamp(0, 200))}');
+    if (kDebugMode) {
+      debugPrint('Processing text of length: ${rawText.length}');
+      debugPrint('First 200 chars: ${rawText.substring(0, rawText.length.clamp(0, 200))}');
+    }
 
     _isLoading = true;
     notifyListeners();
@@ -66,12 +75,12 @@ class ChatbotController extends ChangeNotifier {
     try {
       // Parse ingredients from raw text
       final ingredients = IngredientParser.parse(rawText);
-      print('Parsed ${ingredients.length} ingredients');
+      if (kDebugMode) debugPrint('Parsed ${ingredients.length} ingredients');
 
       if (ingredients.isEmpty) {
         // Try quick extract as fallback for comma-separated lists
         final quickList = IngredientParser.quickExtract(rawText);
-        print('Quick extract found ${quickList.length} items');
+        if (kDebugMode) debugPrint('Quick extract found ${quickList.length} items');
         
         if (quickList.isNotEmpty && quickList.length >= 2) {
           // Filter out very short or numeric-only items
@@ -108,10 +117,12 @@ class ChatbotController extends ChangeNotifier {
           }
         }
         
-        // If substantial text exists, try to send to AI directly
-        if (rawText.length > 100) {
+        // If substantial text exists, try to send to AI directly.
+        // Only for text the user explicitly typed/pasted themselves -
+        // never for scanned screen content that didn't match an anchor.
+        if (isUserProvided && rawText.length > 100) {
           addMessage(ChatMessage(
-            text: '📋 Analyzing screen content...',
+            text: '📋 Analyzing pasted text...',
             isUser: true,
             type: MessageType.ingredients,
           ));

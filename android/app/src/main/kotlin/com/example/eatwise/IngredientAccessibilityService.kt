@@ -88,19 +88,24 @@ class IngredientAccessibilityService : AccessibilityService() {
 
         val fullText = collectedText.toString()
         Log.d(TAG, "Collected ${fullText.length} characters from screen")
-        Log.d(TAG, "First 500 chars: ${fullText.take(500)}")
-        
+        // Scanned screen content can include anything visible in any app -
+        // only ever log it in debug builds, never in a release build.
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "First 500 chars: ${fullText.take(500)}")
+        }
+
         val ingredientBlock = extractIngredientBlock(fullText)
 
         if (ingredientBlock.isNotEmpty() && ingredientBlock.length > 20) {
-            Log.d(TAG, "Found ingredients: ${ingredientBlock.take(200)}...")
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Found ingredients: ${ingredientBlock.take(200)}...")
+            }
             IngredientScanner.sendToFlutter(ingredientBlock)
-        } else if (fullText.length > 100) {
-            // If we have substantial text but no ingredients anchor, send it for direct parsing
-            Log.d(TAG, "No anchor found, sending full text for analysis")
-            IngredientScanner.sendToFlutter(fullText)
         } else {
-            Log.d(TAG, "No ingredients found on this screen (collected ${fullText.length} chars)")
+            // No ingredients anchor found: do NOT forward arbitrary on-screen text.
+            // The scan can be triggered on any foreground app, so unrelated text
+            // (which may include sensitive content) must never leave this device.
+            Log.d(TAG, "No ingredients anchor found on this screen (collected ${fullText.length} chars)")
             IngredientScanner.sendStatus("No ingredient list found. Scroll to show ingredients and try again.")
         }
         

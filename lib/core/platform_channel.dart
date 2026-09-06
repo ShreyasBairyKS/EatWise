@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'constants.dart';
 
@@ -17,7 +18,7 @@ class NativeBridge {
       final result = await _methodChannel.invokeMethod('startScan');
       return result == true;
     } catch (e) {
-      print('Error starting scan: $e');
+      if (kDebugMode) debugPrint('Error starting scan: $e');
       return false;
     }
   }
@@ -28,7 +29,7 @@ class NativeBridge {
       final result = await _methodChannel.invokeMethod('stopScan');
       return result == true;
     } catch (e) {
-      print('Error stopping scan: $e');
+      if (kDebugMode) debugPrint('Error stopping scan: $e');
       return false;
     }
   }
@@ -40,7 +41,7 @@ class NativeBridge {
           await _methodChannel.invokeMethod('checkAccessibilityPermission');
       return result == true;
     } catch (e) {
-      print('Error checking accessibility permission: $e');
+      if (kDebugMode) debugPrint('Error checking accessibility permission: $e');
       return false;
     }
   }
@@ -52,7 +53,7 @@ class NativeBridge {
           await _methodChannel.invokeMethod('checkOverlayPermission');
       return result == true;
     } catch (e) {
-      print('Error checking overlay permission: $e');
+      if (kDebugMode) debugPrint('Error checking overlay permission: $e');
       return false;
     }
   }
@@ -62,7 +63,7 @@ class NativeBridge {
     try {
       await _methodChannel.invokeMethod('openAccessibilitySettings');
     } catch (e) {
-      print('Error opening accessibility settings: $e');
+      if (kDebugMode) debugPrint('Error opening accessibility settings: $e');
     }
   }
 
@@ -71,7 +72,7 @@ class NativeBridge {
     try {
       await _methodChannel.invokeMethod('openOverlaySettings');
     } catch (e) {
-      print('Error opening overlay settings: $e');
+      if (kDebugMode) debugPrint('Error opening overlay settings: $e');
     }
   }
 
@@ -81,7 +82,7 @@ class NativeBridge {
       final result = await _methodChannel.invokeMethod('showOverlay');
       return result == true;
     } catch (e) {
-      print('Error showing overlay: $e');
+      if (kDebugMode) debugPrint('Error showing overlay: $e');
       return false;
     }
   }
@@ -92,7 +93,7 @@ class NativeBridge {
       final result = await _methodChannel.invokeMethod('hideOverlay');
       return result == true;
     } catch (e) {
-      print('Error hiding overlay: $e');
+      if (kDebugMode) debugPrint('Error hiding overlay: $e');
       return false;
     }
   }
@@ -122,7 +123,7 @@ class NativeBridge {
       final result = await _methodChannel.invokeMethod('isServiceReady');
       return result == true;
     } catch (e) {
-      print('Error checking service status: $e');
+      if (kDebugMode) debugPrint('Error checking service status: $e');
       return false;
     }
   }

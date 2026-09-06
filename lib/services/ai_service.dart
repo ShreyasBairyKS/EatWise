@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import '../core/knowledge_base.dart';
@@ -26,7 +27,7 @@ class AIService {
     if (AppConstants.apiKey == 'YOUR_API_KEY_HERE' || 
         AppConstants.apiKey.isEmpty ||
         AppConstants.apiKey.contains('\n')) {
-      print('Using local analysis - API key not configured properly');
+      if (kDebugMode) debugPrint('Using local analysis - API key not configured properly');
       return _localAnalysis(ingredients, userProfile);
     }
 
@@ -41,8 +42,10 @@ class AIService {
           ? AppConstants.openRouterModel 
           : AppConstants.openAiModel;
       
-      print('Calling AI API: $baseUrl with model: $model');
-      print('Analyzing ${ingredients.length} ingredients: ${ingredients.take(5).join(", ")}...');
+      if (kDebugMode) {
+        debugPrint('Calling AI API: $baseUrl with model: $model');
+        debugPrint('Analyzing ${ingredients.length} ingredients: ${ingredients.take(5).join(", ")}...');
+      }
       
       // Build headers
       final Map<String, String> headers = {
@@ -91,14 +94,16 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('AI API Response Status: ${response.statusCode}');
+      if (kDebugMode) debugPrint('AI API Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'];
-        
-        print('AI Response received: ${content.toString().substring(0, content.toString().length.clamp(0, 100))}...');
-        
+
+        if (kDebugMode) {
+          debugPrint('AI Response received: ${content.toString().substring(0, content.toString().length.clamp(0, 100))}...');
+        }
+
         // Parse JSON from response (handle markdown code blocks)
         String jsonStr = content.toString().trim();
         if (jsonStr.contains('```')) {
@@ -116,12 +121,14 @@ Respond ONLY with valid JSON (no markdown, no code blocks):
         
         return HealthAnalysis.fromJson(jsonDecode(jsonStr));
       } else {
-        print('AI API Error: ${response.statusCode} - ${response.body}');
+        if (kDebugMode) debugPrint('AI API Error: ${response.statusCode} - ${response.body}');
         return _localAnalysis(ingredients, userProfile);
       }
     } catch (e, stackTrace) {
-      print('AI Analysis Error: $e');
-      print('Stack trace: $stackTrace');
+      if (kDebugMode) {
+        debugPrint('AI Analysis Error: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
       return _localAnalysis(ingredients, userProfile);
     }
   }

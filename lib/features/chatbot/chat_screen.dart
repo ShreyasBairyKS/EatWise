@@ -447,8 +447,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         (text.split(RegExp(r'[,;]')).length > 2);
     
     if (looksLikeIngredients) {
-      // Process as ingredient list
-      controller.processIngredients(text);
+      // Process as ingredient list - user typed/pasted this directly
+      controller.processIngredients(text, isUserProvided: true);
     } else {
       // Process as chat message
       controller.sendMessage(text);
