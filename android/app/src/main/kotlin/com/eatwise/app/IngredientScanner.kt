@@ -1,4 +1,4 @@
-package com.example.eatwise
+package com.eatwise.app
 
 import android.content.Context
 import io.flutter.plugin.common.EventChannel

@@ -1,4 +1,4 @@
-package com.example.eatwise
+package com.eatwise.app
 
 import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
@@ -16,7 +16,9 @@ class IngredientAccessibilityService : AccessibilityService() {
         var isScanning = false
     }
 
-    // Keyword anchors to detect ingredient sections
+    // Keyword anchors to detect ingredient sections.
+    // Kept in sync by hand with IngredientKeywords in lib/core/constants.dart -
+    // update both when changing either.
     private val ingredientAnchors = listOf(
         "ingredients:", "ingredients", "contains:", "contains",
         "composition:", "composition", "made with", "made from", 

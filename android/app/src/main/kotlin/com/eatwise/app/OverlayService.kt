@@ -1,4 +1,4 @@
-package com.example.eatwise
+package com.eatwise.app
 
 import android.app.Service
 import android.app.Notification

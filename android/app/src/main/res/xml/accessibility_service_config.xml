@@ -7,4 +7,4 @@
     android:canPerformGestures="false"
     android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagRequestEnhancedWebAccessibility"
     android:notificationTimeout="100"
-    android:settingsActivity="com.example.eatwise.MainActivity" />
+    android:settingsActivity="com.eatwise.app.MainActivity" />

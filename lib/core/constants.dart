@@ -37,7 +37,11 @@ class AppConstants {
   static const String prefOnboardingComplete = 'onboarding_complete';
 }
 
-/// Ingredient keyword anchors for detection
+/// Ingredient keyword anchors for detection.
+///
+/// Kept in sync by hand with the identical lists in
+/// android/app/src/main/kotlin/com/eatwise/app/IngredientAccessibilityService.kt
+/// (ingredientAnchors / stopKeywords) - update both when changing either.
 class IngredientKeywords {
   static const List<String> anchors = [
     'ingredients:',
@@ -51,6 +55,9 @@ class IngredientKeywords {
     'contents:',
     'contents',
     'ingredients list',
+    // Hindi/Indian variants
+    'सामग्री',
+    'घटक',
   ];
   
   static const List<String> stopWords = [
