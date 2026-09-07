@@ -86,9 +86,6 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.2.3
 
-  # OCR (Text Recognition)
-  google_mlkit_text_recognition: ^0.13.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -96,7 +93,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
 ```
 
-`google_mlkit_text_recognition` is declared but not currently wired up to any code path - see [Section 6](#6-ocr-fallback-with-ml-kit). `shared_preferences` is likewise declared but not yet read/written anywhere.
+`shared_preferences` is declared but not yet read/written anywhere - see [Section 10.2](#102-consent-dialog--onboarding). `google_mlkit_text_recognition` was removed since nothing used it - see [Section 6](#6-ocr-fallback-with-ml-kit).
 
 Run:
 ```bash
@@ -739,7 +736,7 @@ See the actual file for the full notification-channel and touch-listener bodies.
 
 ## 6. OCR Fallback with ML Kit
 
-**Not implemented.** `google_mlkit_text_recognition` is listed in `pubspec.yaml`, but there is no `OCRService.kt` and no `lib/services/ocr_service.dart` in the current codebase - ingredient detection relies entirely on the Accessibility Service reading text nodes (Section 3), not on image OCR. If OCR is picked back up as a fallback (e.g. for screens that render ingredient text as an image rather than real text nodes), remove the unused dependency or wire it up - don't leave it declared and dead.
+**Not implemented, and the dependency was removed.** `google_mlkit_text_recognition` used to sit in `pubspec.yaml` with no `OCRService.kt` and no `lib/services/ocr_service.dart` behind it anywhere in the codebase - ingredient detection relies entirely on the Accessibility Service reading text nodes (Section 3), not on image OCR. Since nothing used it, the dependency (and its ML Kit ProGuard rules - Section 12.4) were dropped rather than left declared and dead. If OCR is picked back up as a fallback (e.g. for screens that render ingredient text as an image rather than real text nodes), re-add `google_mlkit_text_recognition` and wire it up properly at that point.
 
 ---
 
@@ -1259,7 +1256,7 @@ adb logcat | grep -i "EatWiseAccessibility"
 - [x] Debug logging is gated behind `kDebugMode` (Dart) / `BuildConfig.DEBUG` (Kotlin) rather than needing manual removal - verify no new `print()`/unconditional `Log.d(...)` calls carrying scanned content have crept back in.
 - [x] `applicationId`/`namespace` set to a real value (`com.eatwise.app`), not the `com.example.eatwise` template default.
 - [ ] Add a real release signing config - `buildTypes.release` currently signs with the **debug** keystore so `flutter run --release` works locally; this must not ship to Play Store as-is.
-- [x] `isMinifyEnabled`/`isShrinkResources` enabled with ProGuard rules for ML Kit (see 12.4) - note ML Kit itself is currently unused (Section 6), so these rules can be dropped if the dependency is removed.
+- [x] `isMinifyEnabled`/`isShrinkResources` enabled; the ML Kit ProGuard rules were removed along with the unused dependency (see 12.4 and Section 6) - re-add them only if OCR is reintroduced.
 - [ ] Test on multiple devices/Android versions, especially permission flows on OEM skins known to restrict Accessibility Services (e.g. MIUI, One UI).
 - [ ] Decide on the consent/onboarding flow (Section 10.2) before submitting - Play Store's accessibility policy expects one.
 
@@ -1285,27 +1282,7 @@ flutter build apk --release
 
 **`android/app/proguard-rules.pro`**
 
-```proguard
-# Keep ML Kit Text Recognition classes
--keep class com.google.mlkit.vision.text.** { *; }
--keep class com.google.mlkit.vision.text.chinese.** { *; }
--keep class com.google.mlkit.vision.text.devanagari.** { *; }
--keep class com.google.mlkit.vision.text.japanese.** { *; }
--keep class com.google.mlkit.vision.text.korean.** { *; }
--keep class com.google.mlkit.vision.text.latin.** { *; }
-
--dontwarn com.google.mlkit.vision.text.chinese.**
--dontwarn com.google.mlkit.vision.text.devanagari.**
--dontwarn com.google.mlkit.vision.text.japanese.**
--dontwarn com.google.mlkit.vision.text.korean.**
-
--keep class com.google.mlkit.** { *; }
--keep,allowobfuscation,allowshrinking interface com.google.mlkit.** { *; }
--keep,allowobfuscation,allowshrinking class * extends com.google.mlkit.** { *; }
-
--keep class com.google_mlkit_text_recognition.** { *; }
--keep class com.google_mlkit_commons.** { *; }
-```
+Empty. It previously held a full set of `-keep`/`-dontwarn` rules for ML Kit's text-recognition classes, but those existed only to support `google_mlkit_text_recognition`, which nothing in the app actually called (Section 6) - removed along with the dependency rather than kept around as dead configuration. `build.gradle.kts` still references this file via `proguardFiles(...)`, so it stays in place (just empty) rather than being deleted; add rules here again if a dependency that needs them gets introduced.
 
 ---
 

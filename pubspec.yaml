@@ -18,9 +18,6 @@ dependencies:
   
   # Local Storage
   shared_preferences: ^2.2.3
-  
-  # OCR (Text Recognition)
-  google_mlkit_text_recognition: ^0.13.1
 
 dev_dependencies:
   flutter_test:
