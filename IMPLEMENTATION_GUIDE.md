@@ -1084,7 +1084,7 @@ Rechecks permissions whenever the app resumes (in case the user changed them in 
 
 (An earlier version of this notice claimed "No data is stored or shared" - inaccurate, since matched ingredient text *is* sent to a third-party AI API for analysis. See `_buildPrivacyNotice()` in the actual file.)
 
-The rest of the screen: a hero section with the app logo (falls back to an icon if the asset fails to load), two permission cards (Accessibility, Display over apps) each showing an Enable button or an Enabled badge, and a Start button disabled until both permissions are granted.
+Before any of that renders, `initState` awaits `ConsentDialog.show(context)` (Section 10.2) and gates the whole screen on the result: while it's resolving, a spinner shows; if declined, `_buildConsentRequired()` renders instead of the permission UI; only once consented does the rest of the screen - hero section with the app logo (falls back to an icon if the asset fails to load), two permission cards (Accessibility, Display over apps) each showing an Enable button or an Enabled badge, and a Start button disabled until both permissions are granted - appear.
 
 ### 9.3 Chat Screen (actual, current)
 
@@ -1212,9 +1212,16 @@ Still relevant, unchanged:
 4. **Third-Party Sharing**: Ingredient text (and, if set, the user's allergy/diet/health-condition profile) goes to the AI provider as part of the analysis request - this should be disclosed plainly, not glossed over.
 5. **User Control**: Accessibility/overlay permissions can be revoked anytime in Android Settings; the app also has a manual "stop scanning" path.
 
-### 10.2 Consent Dialog / Onboarding
+### 10.2 Consent Dialog / Onboarding (actual, current)
 
-**Not implemented.** `AppConstants` defines `prefUserConsented` and `prefOnboardingComplete` keys and `shared_preferences` is a dependency, but there is currently no `ConsentDialog` widget, no onboarding screen, and nothing reads or writes those keys. The home screen's privacy notice (Section 9.2) is the only privacy-related UI that currently exists. Before shipping, decide whether an explicit consent flow is needed (Play Store's Accessibility Service policy generally expects one) and either build it against those existing constants or remove the unused keys.
+**`lib/features/onboarding/consent_dialog.dart`**
+
+Shown once via `HomeScreen` (in `initState`, after the first frame) before the permission-setup UI is ever displayed. `ConsentDialog.show(context)` checks `AppConstants.prefUserConsented` in `SharedPreferences`; if already `true` it returns immediately without showing anything. Otherwise it shows a non-dismissible dialog describing exactly what the Accessibility/Overlay permissions are used for and what is/isn't sent off-device (matching the actual behavior in Section 3.2 and 8.1 - it explicitly says matched ingredient text goes to the AI service, unlike an earlier draft of this dialog that claimed nothing was shared).
+
+- **Agree** persists `prefUserConsented = true` and the home screen proceeds to the normal permission cards.
+- **Decline** does not persist anything, and the home screen shows a locked-out state (hero + a short explanation + a "Review Privacy Notice" button that re-triggers the dialog) instead of the permission UI - the app can't function without those permissions anyway, so there's no reason to let the user past without agreeing.
+
+`prefOnboardingComplete` is still unused - there's no multi-step onboarding flow, only this single consent gate. Verified on-device (Pixel 8 Pro emulator): fresh install shows the dialog, Decline locks the screen with a working retry, Agree proceeds to permissions, and a full app restart after agreeing does not re-show the dialog.
 
 ---
 
@@ -1258,7 +1265,7 @@ adb logcat | grep -i "EatWiseAccessibility"
 - [ ] Add a real release signing config - `buildTypes.release` currently signs with the **debug** keystore so `flutter run --release` works locally; this must not ship to Play Store as-is.
 - [x] `isMinifyEnabled`/`isShrinkResources` enabled; the ML Kit ProGuard rules were removed along with the unused dependency (see 12.4 and Section 6) - re-add them only if OCR is reintroduced.
 - [ ] Test on multiple devices/Android versions, especially permission flows on OEM skins known to restrict Accessibility Services (e.g. MIUI, One UI).
-- [ ] Decide on the consent/onboarding flow (Section 10.2) before submitting - Play Store's accessibility policy expects one.
+- [x] Consent flow implemented (Section 10.2) - a first-launch dialog gates the permission-setup screen; declining locks the user out with a retry rather than proceeding.
 
 ### 12.2 Play Store Requirements
 
