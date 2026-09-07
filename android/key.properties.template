@@ -1,0 +1,8 @@
+# Release signing config template.
+# Copy this file to android/key.properties (gitignored) and fill in your
+# own values after generating a keystore - see IMPLEMENTATION_GUIDE.md
+# Section 12.1 for the keytool command.
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=upload-keystore.jks

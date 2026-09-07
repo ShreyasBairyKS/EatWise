@@ -736,7 +736,7 @@ See the actual file for the full notification-channel and touch-listener bodies.
 
 ## 6. OCR Fallback with ML Kit
 
-**Not implemented, and the dependency was removed.** `google_mlkit_text_recognition` used to sit in `pubspec.yaml` with no `OCRService.kt` and no `lib/services/ocr_service.dart` behind it anywhere in the codebase - ingredient detection relies entirely on the Accessibility Service reading text nodes (Section 3), not on image OCR. Since nothing used it, the dependency (and its ML Kit ProGuard rules - Section 12.4) were dropped rather than left declared and dead. If OCR is picked back up as a fallback (e.g. for screens that render ingredient text as an image rather than real text nodes), re-add `google_mlkit_text_recognition` and wire it up properly at that point.
+**Not implemented, and the dependency was removed.** `google_mlkit_text_recognition` used to sit in `pubspec.yaml` with no `OCRService.kt` and no `lib/services/ocr_service.dart` behind it anywhere in the codebase - ingredient detection relies entirely on the Accessibility Service reading text nodes (Section 3), not on image OCR. Since nothing used it, the dependency (and its ML Kit ProGuard rules - Section 12.5) were dropped rather than left declared and dead. If OCR is picked back up as a fallback (e.g. for screens that render ingredient text as an image rather than real text nodes), re-add `google_mlkit_text_recognition` and wire it up properly at that point.
 
 ---
 
@@ -1258,16 +1258,38 @@ adb logcat | grep -i "EatWiseAccessibility"
 
 ## 12. Deployment Checklist
 
-### 12.1 Pre-Release
+### 12.1 Release Signing Setup (actual, current)
+
+`buildTypes.release` in `android/app/build.gradle.kts` uses a real keystore once `android/key.properties` exists, and falls back to the debug keystore when it doesn't - so `flutter run --release` keeps working locally before signing is set up, but **a debug-signed build must never ship to Play Store**.
+
+To set up real signing:
+
+1. Generate a keystore yourself (run this in your own terminal - it prompts for a keystore password, a key password, and certificate details; choose your own values, don't reuse examples, and don't ask an AI assistant to generate or store them for you):
+   ```bash
+   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+   Move the resulting `upload-keystore.jks` into `android/app/` (or wherever you reference it from in step 2).
+2. Copy `android/key.properties.template` to `android/key.properties` (already gitignored via `android/.gitignore`, alongside `**/*.jks`/`**/*.keystore`) and fill in the real values:
+   ```properties
+   storePassword=<your keystore password>
+   keyPassword=<your key password>
+   keyAlias=upload
+   storeFile=upload-keystore.jks
+   ```
+3. Build - `flutter build apk --release` (or `appbundle`) now signs with that keystore automatically; `build.gradle.kts` reads `key.properties` and wires `signingConfigs.release` accordingly, with no other changes needed.
+
+**Back up the keystore and its passwords somewhere durable and separate from this repo.** Losing them means you can never publish an update to the same Play Store listing again - Google cannot reissue a lost upload key.
+
+### 12.2 Pre-Release
 
 - [x] Debug logging is gated behind `kDebugMode` (Dart) / `BuildConfig.DEBUG` (Kotlin) rather than needing manual removal - verify no new `print()`/unconditional `Log.d(...)` calls carrying scanned content have crept back in.
 - [x] `applicationId`/`namespace` set to a real value (`com.eatwise.app`), not the `com.example.eatwise` template default.
-- [ ] Add a real release signing config - `buildTypes.release` currently signs with the **debug** keystore so `flutter run --release` works locally; this must not ship to Play Store as-is.
-- [x] `isMinifyEnabled`/`isShrinkResources` enabled; the ML Kit ProGuard rules were removed along with the unused dependency (see 12.4 and Section 6) - re-add them only if OCR is reintroduced.
+- [ ] Generate a real release keystore and `android/key.properties` (Section 12.1) - the build already supports it, but no keystore has been generated yet, so release builds still fall back to debug signing.
+- [x] `isMinifyEnabled`/`isShrinkResources` enabled; the ML Kit ProGuard rules were removed along with the unused dependency (see 12.5 and Section 6) - re-add them only if OCR is reintroduced.
 - [ ] Test on multiple devices/Android versions, especially permission flows on OEM skins known to restrict Accessibility Services (e.g. MIUI, One UI).
 - [x] Consent flow implemented (Section 10.2) - a first-launch dialog gates the permission-setup screen; declining locks the user out with a retry rather than proceeding.
 
-### 12.2 Play Store Requirements
+### 12.3 Play Store Requirements
 
 1. **Accessibility Service Declaration**
    - Must justify why accessibility is needed
@@ -1279,13 +1301,13 @@ adb logcat | grep -i "EatWiseAccessibility"
    - App functionality video
    - Accessibility feature justification
 
-### 12.3 Build Release APK
+### 12.4 Build Release APK
 
 ```bash
 flutter build apk --release
 ```
 
-### 12.4 ProGuard Rules (actual, current)
+### 12.5 ProGuard Rules (actual, current)
 
 **`android/app/proguard-rules.pro`**
 
