@@ -134,13 +134,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               await NativeBridge.startScan();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Scanning screen for ingredients...'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              if (mounted) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Scanning screen for ingredients...'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              }
             },
             tooltip: 'Scan Now',
           ),
