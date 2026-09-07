@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/platform_channel.dart';
+import '../onboarding/consent_dialog.dart';
 import 'chat_screen.dart';
 
 /// Home screen with permission setup and service activation
@@ -14,18 +15,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _accessibilityEnabled = false;
   bool _overlayEnabled = false;
   bool _isLoading = true;
+  bool _checkingConsent = true;
+  bool _consented = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolveConsent());
+  }
+
+  Future<void> _resolveConsent() async {
+    final consented = await ConsentDialog.show(context);
+    if (!mounted) return;
+    setState(() {
+      _consented = consented;
+      _checkingConsent = false;
+    });
+    if (consented) {
+      _checkPermissions();
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Recheck permissions when app resumes (user might have changed settings)
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _consented) {
       _checkPermissions();
     }
   }
@@ -47,46 +62,86 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
+        child: _buildBody(),
+      ),
+    );
+  }
 
-                    // Logo / Hero
-                    _buildHero(),
+  Widget _buildBody() {
+    if (_checkingConsent) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_consented) {
+      return _buildConsentRequired();
+    }
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 40),
 
-                    const SizedBox(height: 48),
+          // Logo / Hero
+          _buildHero(),
 
-                    // Permission Cards
-                    _buildPermissionSection(),
+          const SizedBox(height: 48),
 
-                    const SizedBox(height: 32),
+          // Permission Cards
+          _buildPermissionSection(),
 
-                    // Start Button
-                    _buildStartButton(),
+          const SizedBox(height: 32),
 
-                    const SizedBox(height: 16),
+          // Start Button
+          _buildStartButton(),
 
-                    // Refresh Button
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: _checkPermissions,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Refresh Permissions'),
-                      ),
-                    ),
+          const SizedBox(height: 16),
 
-                    const SizedBox(height: 32),
+          // Refresh Button
+          Center(
+            child: TextButton.icon(
+              onPressed: _checkPermissions,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh Permissions'),
+            ),
+          ),
 
-                    // Privacy Notice
-                    _buildPrivacyNotice(),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 32),
+
+          // Privacy Notice
+          _buildPrivacyNotice(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsentRequired() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildHero(),
+          const SizedBox(height: 32),
+          Text(
+            'EatWise needs your consent to the privacy notice before it can request permissions.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _resolveConsent,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Review Privacy Notice'),
+          ),
+        ],
       ),
     );
   }
